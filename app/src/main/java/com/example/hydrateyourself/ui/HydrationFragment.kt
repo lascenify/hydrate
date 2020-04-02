@@ -1,12 +1,17 @@
 package com.example.hydrateyourself.ui
 
 import android.content.*
+import android.content.Context.BATTERY_SERVICE
+import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
@@ -63,6 +68,18 @@ class HydrationFragment : Fragment(), SharedPreferences.OnSharedPreferenceChange
      */
     override fun onResume() {
         super.onResume()
+        /** Determine current charging status */
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val batteryManager = activity!!.getSystemService(BATTERY_SERVICE) as BatteryManager?
+            showCharging(batteryManager!!.isCharging)
+        } else {
+            val newIntentFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            val currentBatteryStatusIntent = activity?.registerReceiver(null, newIntentFilter)
+            val batteryStatus = currentBatteryStatusIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            val isCharging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING || batteryStatus == BatteryManager.BATTERY_STATUS_FULL
+            showCharging(isCharging)
+        }
+        /** Register the receiver*/
         activity!!.registerReceiver(chargingBroadcastReceiver, intentFilter)
     }
 
